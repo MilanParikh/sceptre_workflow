@@ -18,7 +18,7 @@ workflow sceptre {
 
     String output_directory_stripped = sub(output_directory, "/+$", "")
 
-    call convert_anndata {
+    call run_sceptre {
         input:
             output_directory = output_directory_stripped,
             counts_file = counts_file,
