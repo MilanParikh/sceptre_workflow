@@ -11,6 +11,7 @@ workflow sceptre {
         #general parameters
         Int cpu = 16
         String memory = "64G"
+        Int extra_disk_space
         String docker = "us.gcr.io/landerlab-atacseq-200218/mehta_sceptre:latest"
         Int preemptible = 2
     }
@@ -26,6 +27,7 @@ workflow sceptre {
             grna_targets_file = grna_targets_file,
             cpu=cpu,
             memory=memory,
+            extra_disk_space = extra_disk_space,
             docker=docker,
             preemptible=preemptible
     }
@@ -45,6 +47,7 @@ task run_sceptre {
         File grna_targets_file
         String memory
         Int cpu
+        Int extra_disk_space
         String docker
         Int preemptible
     }
@@ -197,7 +200,7 @@ task run_sceptre {
 
         CODE
 
-        gsutil -m rsync -r outputs ~{output_dir}
+        gsutil -m rsync -r outputs ~{output_directory}
         tar -cvf outputs.tar.gz outputs/
         
     >>>
@@ -210,7 +213,7 @@ task run_sceptre {
         docker: docker
         memory: memory
         bootDiskSizeGb: 12
-        disks: "local-disk " + ceil(size(anndata_file, "GB")*2) + " HDD"
+        disks: "local-disk " + (ceil(size(counts_file, "GB")*4) + extra_disk_space) + " HDD"
         cpu: cpu
         preemptible: preemptible
     }
