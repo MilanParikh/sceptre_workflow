@@ -17,5 +17,5 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.c
     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg  add - && \
     apt-get update -y && apt-get install google-cloud-cli -y
 
-RUN R -e 'install.packages(c("devtools"))'
+RUN R -e 'install.packages(c("devtools", "MatrixExtra", "Seurat"))'
 RUN R -e 'devtools::install_github("katsevich-lab/sceptre")'
