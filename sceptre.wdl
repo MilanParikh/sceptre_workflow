@@ -11,6 +11,9 @@ workflow sceptre {
         #general parameters
         Int cpu = 16
         String memory = "64G"
+        String grna_integration_strategy = "union"
+        String sidedness = "both"
+        moi="low"
         Int extra_disk_space
         String docker = "us.gcr.io/landerlab-atacseq-200218/mehta_sceptre:latest"
         Int preemptible = 2
@@ -27,6 +30,9 @@ workflow sceptre {
             grna_targets_file = grna_targets_file,
             cpu=cpu,
             memory=memory,
+            grna_integration_strategy=grna_integration_strategy,
+            sidedness=sidedness,
+            moi=moi,
             extra_disk_space = extra_disk_space,
             docker=docker,
             preemptible=preemptible
@@ -61,31 +67,32 @@ task run_sceptre {
         library(dplyr)
         library(ggplot2)
         library(Matrix)
+        library(data.table)
         library(MatrixExtra)
         library(sceptre)
         library(Seurat)
 
         # read count matrix and convert to sparse
-        counts <- read.csv("~{counts_file}",
+        counts <- fread("~{counts_file}",
                    header=TRUE)
         rownames(counts) <- counts[,1]
         counts <- counts[,colnames(counts) != "X"]
         counts_sparse <- as.csr.matrix(counts, binary = FALSE, logical = FALSE, sort = FALSE)
         counts_sparse <- t(counts_sparse)
         # read design matrix file and convert to sparse
-        design_mtx <- read.csv("~{design_matrix_file}",
+        design_mtx <- fread("~{design_matrix_file}",
                    header=TRUE)
         rownames(design_mtx) <- design_mtx[,1]
         design_mtx <- design_mtx[,colnames(design_mtx) != "X"]
         design_mtx_sparse <- as.csr.matrix(design_mtx, binary = FALSE, logical = FALSE, sort = FALSE)
         design_mtx_sparse <- t(design_mtx_sparse)
         # get metadata/covariates file
-        covariates <- read.csv("~{covariates_file}",
+        covariates <- fread("~{covariates_file}",
                    header=TRUE)
         rownames(covariates) <- covariates[,1]
         covariates <- covariates[,colnames(covariates) != "X"]
         # get grna targets and subset to those present in dataset
-        grna_targets <- read.csv("~{grna_targets_file}",header=TRUE)
+        grna_targets <- fread("~{grna_targets_file}",header=TRUE)
         grna_targets <- grna_targets %>% filter(grna_id %in% rownames(design_mtx_sparse))
 
         # create sceptre object
@@ -93,7 +100,7 @@ task run_sceptre {
         grna_matrix <- design_mtx_sparse        # grna matrix
         extra_covariates <- covariates          # batch information
         grna_target_data_frame <- grna_targets  # gRNA target data frame
-        moi <- "low"
+        moi <- moi
 
         sceptre_object <- import_data(
         response_matrix = response_matrix,
@@ -124,8 +131,8 @@ task run_sceptre {
         sceptre_object = sceptre_object,
         discovery_pairs = discovery_pairs,
         positive_control_pairs = positive_control_pairs,
-        grna_integration_strategy = "singleton",
-        side = "left"
+        grna_integration_strategy = grna_integration_strategy,
+        side = sidedness
         )
 
         print(sceptre_object)
